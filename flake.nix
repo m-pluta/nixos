@@ -1,34 +1,45 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOs/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
+
     home-manager = {
-      url = "github:nix-community/home-manager";
+      url = "github:nix-community/home-manager/release-24.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = { self, nixpkgs, home-manager, ... }@inputs:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      home-manager,
+      ...
+    }@inputs:
     let
       inherit (self) outputs;
-      system = "x86_64-linux";
-      pkgs = import nixpkgs { inherit system; };
-    in {
-      nixosConfigurations.system-config = nixpkgs.lib.nixosSystem {
-        system = system;
+    in
+    {
+      nixosConfigurations.mikey = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = {
+          inherit inputs outputs;
+        };
         modules = [
-          home-manager.nixosModules.home-manager
+          ./hardware
           ./common
-          ./hardware-configuration.nix
+          home-manager.nixosModules.home-manager
           {
             home-manager = {
+              backupFileExtension = "backup";
               useGlobalPkgs = true;
               useUserPackages = true;
-              extraSpecialArgs = { inherit inputs outputs; };
-              users.miikey = import ./home; # TODO username
+              extraSpecialArgs = {
+                inherit inputs outputs;
+              };
+              users.mikey = import ./home;
             };
           }
         ];
       };
-      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt;
     };
 }

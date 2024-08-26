@@ -1,158 +1,176 @@
-{ pkgs, ... }: {
-  system.stateVersion = "23.11"; # Did you read the comment?
+{
+  config,
+  pkgs,
+  inputs,
+  ...
+}:
 
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
-  services.udev.packages = [pkgs.dolphinEmu];
-  networking.hostName = "miikey-nixos";
-  networking.networkmanager.enable = true;
-
-  i18n.defaultLocale = "en_GB.UTF-8";
-  i18n.extraLocaleSettings = {
-    LC_ADDRESS = "en_GB.UTF-8";
-    LC_IDENTIFICATION = "en_GB.UTF-8";
-    LC_MEASUREMENT = "en_GB.UTF-8";
-    LC_MONETARY = "en_GB.UTF-8";
-    LC_NAME = "en_GB.UTF-8";
-    LC_NUMERIC = "en_GB.UTF-8";
-    LC_PAPER = "en_GB.UTF-8";
-    LC_TELEPHONE = "en_GB.UTF-8";
-    LC_TIME = "en_GB.UTF-8";
+{
+  system = {
+    stateVersion = "24.05";
+    activationScripts.binbash = {
+      deps = [ "binsh" ];
+      text = ''
+        ln -sf /bin/sh /bin/bash
+      '';
+    };
   };
 
-  services.xserver = {
-    enable = true;
-    displayManager.sddm.enable = true;
-    desktopManager.plasma5.enable = true;
-    layout = "gb";
-    xkbVariant = "";
-    displayManager.autoLogin.enable = true;
-    displayManager.autoLogin.user = "miikey";
+  time.timeZone = "Europe/London";
 
-  };
   console.keyMap = "uk";
-  services.printing.enable = true;
 
-  services.mpd.enable = true;
-  services.fstrim.enable = true;
-  services.dbus.enable = true;
-  hardware.bluetooth.enable = true;
-  hardware.bluetooth.powerOnBoot = true;
-  services.blueman.enable = true;
+  i18n = {
+    defaultLocale = "en_GB.UTF-8";
+    extraLocaleSettings = {
+      LC_ADDRESS = "en_GB.UTF-8";
+      LC_IDENTIFICATION = "en_GB.UTF-8";
+      LC_MEASUREMENT = "en_GB.UTF-8";
+      LC_MONETARY = "en_GB.UTF-8";
+      LC_NAME = "en_GB.UTF-8";
+      LC_NUMERIC = "en_GB.UTF-8";
+      LC_PAPER = "en_GB.UTF-8";
+      LC_TELEPHONE = "en_GB.UTF-8";
+      LC_TIME = "en_GB.UTF-8";
+    };
+  };
 
-  networking.firewall.enable = false;
+  boot = {
+    kernelPackages = pkgs.linuxPackages_latest;
+    loader = {
+      systemd-boot.enable = true;
+      efi.canTouchEfiVariables = true;
+    };
+  };
+
+  hardware.pulseaudio.enable = false;
+
+  security.rtkit.enable = true;
+
+  services = {
+    printing.enable = true;
+    auto-cpufreq.enable = true;
+    thermald.enable = true;
+    libinput.enable = true;
+    fstrim.enable = true;
+    dbus.enable = true;
+
+    power-profiles-daemon.enable = false;
+    tlp = {
+      enable = true;
+      settings = {
+        CPU_BOOST_ON_BAT = 0;
+        CPU_SCALING_GOVERNOR_ON_BATTERY = "powersave";
+        START_CHARGE_THRESH_BAT0 = 80;
+        STOP_CHARGE_THRESH_BAT0 = 90;
+        RUNTIME_PM_ON_BAT = "auto";
+      };
+    };
+
+    xserver = {
+      enable = true;
+      displayManager.gdm.enable = true;
+      desktopManager.gnome.enable = true;
+
+      xkb = {
+        layout = "gb";
+      };
+    };
+
+    pipewire = {
+      enable = true;
+      alsa = {
+        enable = true;
+        support32Bit = true;
+      };
+      pulse.enable = true;
+    };
+  };
+
+  programs = {
+    firefox.enable = true;
+    gnupg.agent = {
+      enable = true;
+      enableSSHSupport = true;
+    };
+  };
+
+  environment = {
+    variables = {
+      EDITOR = "lvim";
+      VISUAL = "lvim";
+    };
+
+    systemPackages = with pkgs; [
+      vim
+      neovim
+      lunarvim
+      fd
+      ripgrep
+      wget
+      gparted
+      tree
+    ];
+  };
+
+  networking = {
+    hostName = "mikebook";
+    hostId = "01afcada";
+    firewall.enable = true;
+    networkmanager.enable = true;
+  };
 
   nix = {
     settings = {
-      experimental-features = [ "nix-command" "flakes" ];
+      trusted-users = [ "mikey" ];
+      experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
       auto-optimise-store = true;
       sandbox = true;
-      trusted-users = [ "miikey" ];
 
       substituters = [
-        "https://cache.nixos.org/"
+        "https://cache.nixos.org"
         "https://nix-community.cachix.org"
-        "https://cache.ngi0.nixos.org/"
-      ];
-      trusted-public-keys = [
-        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-        "cache.ngi0.nixos.org-1:KqH5CBLNSyX184S9BKZJo1LxrxJ9ltnY2uAs5c/f1MA="
       ];
     };
-    gc = {
-      automatic = true;
-      dates = "weekly";
-    };
+
+    # gc = {
+    #   automatic = true;
+    #   dates = "weekly";
+    # };
+
     optimise = {
       automatic = true;
       dates = [ "weekly" ];
     };
+
     package = pkgs.nixVersions.stable;
   };
 
-  security.rtkit.enable = true;
+  nixpkgs.config.allowUnfree = true;
 
-  services.pipewire = {
-    enable = true;
-    alsa = {
-      enable = true;
-      support32Bit = true;
-    };
-    pulse.enable = true;
-    wireplumber.enable = true;
-  };
+  fonts.packages = with pkgs; [
+    (nerdfonts.override { fonts = [ "JetBrainsMono" ]; })
+  ];
 
-  services.logind = {
-    lidSwitch = "suspend-then-hibernate";
-    extraConfig = ''
-      HandlePowerKey=suspend-then-hibernate
-      IdleAction=suspend-then-hibernate
-      IdleActionSec=2m
-    '';
-  };
-  systemd.sleep.extraConfig = "HibernateDelaySec=1h";
-
-  nixpkgs.config = { allowUnfree = true; };
-  time.timeZone = "Europe/London";
-
-  virtualisation.virtualbox.host.enable = true;
-  users.extraGroups.vboxusers.members = [ "miikey" ];
-
-  programs.steam.enable = true;
-  programs.zsh.enable = true;
-  fonts = {
-    packages = with pkgs; [ 
-      nerdfonts 
-      noto-fonts
-      noto-fonts-cjk
-    ];
-
-    fontconfig = {
-      enable = true;
-      antialias = true;
-
-      hinting = {
-        enable = true;
-        style = "full";
-        autohint = true;
-      };
-
-      subpixel = {
-        rgba = "rgb";
-        lcdfilter = "default";
-      };
-    };
-  };
+  # fonts = {
+  #   packages = with pkgs; [ nerdfonts ];
+  # };
 
   users = {
     users = {
-      miikey = {
+      mikey = {
         isNormalUser = true;
-        description = "Michal";
+        description = "Michal Pluta";
         initialPassword = "password";
-        extraGroups = [ "networkmanager" "wheel" "video" ];
+        extraGroups = [
+          "networkmanager"
+          "wheel"
+        ];
       };
     };
-    defaultUserShell = pkgs.zsh;
-  };
-
-  environment.variables = {
-    EDITOR = "nvim";
-    VISUAL = "nvim";
-  };
-
-  environment.systemPackages = with pkgs; [
-    neovim
-    wget
-    fuse
-    unzip
-    tree
-    gparted
-  ];
-  environment.pathsToLink = [ "/share/zsh" ];
-
-  programs.gnupg.agent = {
-    enable = true;
-    enableSSHSupport = true;
+    defaultUserShell = pkgs.bash;
   };
 }
