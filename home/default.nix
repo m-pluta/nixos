@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
   home = {
@@ -8,21 +8,26 @@
 
     packages = with pkgs; [
       discord
+      google-chrome
       neofetch
-      obsidian
-      zotero
       spotify
-      obs-studio
+      audacity
+      flameshot
+      gimp
       vlc
-      
+      mpv
+      popcorntime
+      mullvad-vpn
+      obs-studio
+      shotcut
+      # qbittorrent
+      transmission
     ];
   };
 
   fonts.fontconfig.enable = true;
 
   programs = {
-    btop.enable = true;
-    home-manager.enable = true;
     zoxide.enable = true;
     starship.enable = true;
 
@@ -31,48 +36,66 @@
       nix-direnv.enable = true;
     };
 
+    alacritty.enable = true;
     kitty = {
       enable = true;
       theme = "Dark Pastel";
       settings = {
         shell = "bash";
-        editor = "nvim";
+        editor = "vim";
         background_opacity = "1";
         dynamic_background_opacity = "yes";
       };
       environment = {
-        "EDITOR" = "lvim";
-        "VISUAL" = "lvim";
+        "EDITOR" = "vim";
+        "VISUAL" = "vim";
       };
     };
 
     vscode = {
-	    enable = true;
-	    package = pkgs.vscode.fhs;
+      enable = true;
+      package = pkgs.vscode.fhs;
     };
 
-    git = {
+    helix = {
       enable = true;
-      delta.enable = true;
-      attributes = [ "*.pdf diff=pdf" ];
-      ignores = [
-        ".env"
-        ".direnv"
-        ".obsidian"
-        "."
-        ".envrc"
-        "zig-cache"
-        "zig-out"
-        "*.code-workspace"
-      ];
-      userName = "Michal Pluta";
-      userEmail = "michalpl2003@gmail.com";
-      extraConfig = {
-        color.ui = "auto";
-        merge.tool = "splice";
-        push.default = "simple";
-        pull.rebase = true;
+      settings = {
+        theme = "catppuccin_macchiato";
+        editor = {
+          cursor-shape = {
+            normal = "block";
+            insert = "bar";
+            select = "underline";
+          };
+          indent-guides = {
+            character = "|";
+            render = true;
+          };
+          bufferline = "always";
+          scrolloff = 5;
+          line-number = "relative";
+          rulers = [ 80 120 ];
+        };
+        keys = {
+          normal = {
+            space = {
+              "w" = ":write";
+              "q" = ":quit";
+            };
+            "V" = "extend_line_below";
+          };
+          select = {
+            "V" = "extend_line_below";
+          };
+        };
       };
+      languages.language = [
+        {
+          name = "nix";
+          auto-format = true;
+          formatter.command = lib.getExe pkgs.nixfmt-rfc-style;
+        }
+      ];
     };
   };
 

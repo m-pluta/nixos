@@ -19,7 +19,7 @@
       inherit (self) outputs;
     in
     {
-      nixosConfigurations.mikey = nixpkgs.lib.nixosSystem {
+      nixosConfigurations.mikebook = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = {
           inherit inputs outputs;

@@ -6,34 +6,11 @@
 }:
 
 {
-  system = {
-    stateVersion = "24.05";
-    activationScripts.binbash = {
-      deps = [ "binsh" ];
-      text = ''
-        ln -sf /bin/sh /bin/bash
-      '';
-    };
-  };
+  system.stateVersion = "24.05";
 
   time.timeZone = "Europe/London";
-
   console.keyMap = "uk";
-
-  i18n = {
-    defaultLocale = "en_GB.UTF-8";
-    extraLocaleSettings = {
-      LC_ADDRESS = "en_GB.UTF-8";
-      LC_IDENTIFICATION = "en_GB.UTF-8";
-      LC_MEASUREMENT = "en_GB.UTF-8";
-      LC_MONETARY = "en_GB.UTF-8";
-      LC_NAME = "en_GB.UTF-8";
-      LC_NUMERIC = "en_GB.UTF-8";
-      LC_PAPER = "en_GB.UTF-8";
-      LC_TELEPHONE = "en_GB.UTF-8";
-      LC_TIME = "en_GB.UTF-8";
-    };
-  };
+  i18n.defaultLocale = "en_GB.UTF-8";
 
   boot = {
     kernelPackages = pkgs.linuxPackages_latest;
@@ -43,17 +20,17 @@
     };
   };
 
-  hardware.pulseaudio.enable = false;
-
   security.rtkit.enable = true;
+
+  hardware.pulseaudio.enable = false;
 
   services = {
     printing.enable = true;
-    auto-cpufreq.enable = true;
+    # auto-cpufreq.enable = true;
     thermald.enable = true;
     libinput.enable = true;
     fstrim.enable = true;
-    dbus.enable = true;
+    mullvad-vpn.enable = true;
 
     power-profiles-daemon.enable = false;
     tlp = {
@@ -84,7 +61,7 @@
         support32Bit = true;
       };
       pulse.enable = true;
-    };
+    }; 
   };
 
   programs = {
@@ -93,23 +70,30 @@
       enable = true;
       enableSSHSupport = true;
     };
+
+
+    nh = {
+      enable = true;
+      clean = {
+        dates = [ "daily" ];
+        extraArgs = "--keep 5 --keep-since 3d";
+      };
+    };
   };
 
   environment = {
-    variables = {
-      EDITOR = "lvim";
-      VISUAL = "lvim";
-    };
-
     systemPackages = with pkgs; [
       vim
-      neovim
-      lunarvim
       fd
       ripgrep
+      git
+      zip
+      unzip
       wget
       gparted
       tree
+      btop
+      htop
     ];
   };
 
@@ -136,10 +120,11 @@
       ];
     };
 
-    # gc = {
-    #   automatic = true;
-    #   dates = "weekly";
-    # };
+    gc = {
+      automatic = true;
+      dates = "daily";
+      options = "--delete-older-than 3d";
+    };
 
     optimise = {
       automatic = true;
@@ -154,10 +139,6 @@
   fonts.packages = with pkgs; [
     (nerdfonts.override { fonts = [ "JetBrainsMono" ]; })
   ];
-
-  # fonts = {
-  #   packages = with pkgs; [ nerdfonts ];
-  # };
 
   users = {
     users = {
