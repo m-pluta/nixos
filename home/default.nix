@@ -1,39 +1,61 @@
 { config, pkgs, lib, ... }:
 
+let
+  helixConfig = import ./helix.nix { inherit pkgs lib config; };
+in
 {
   home = {
-    stateVersion = "24.05";
+    stateVersion = "25.05";
     username = "mikey";
     homeDirectory = "/home/mikey";
 
     packages = with pkgs; [
-      discord
-      google-chrome
-      neofetch
-      spotify
+      # keep-sorted start sticky_comments=no
+      atool
       audacity
+      discord
       flameshot
       gimp
-      vlc
+      google-chrome
       mpv
-      popcorntime
       mullvad-vpn
+      neofetch
+      neovim
       obs-studio
+      popcorntime
+      qbittorrent
       shotcut
-      # qbittorrent
-      transmission
+      spotify
+      vlc
+      zotero
+      # keep-sorted end
     ];
   };
 
   fonts.fontconfig.enable = true;
 
   programs = {
-    zoxide.enable = true;
-    starship.enable = true;
-
     direnv = {
       enable = true;
       nix-direnv.enable = true;
+    };
+
+    atuin = {
+      enable = true;
+      enableZshIntegration = true;
+      settings = {
+        auto_sync = false;
+        update_check = false;
+        dialect = "uk";
+        invert = true;
+        smart_sort = true;
+        style = "compact";
+        keymap_mode = "vim-insert";
+        enter_accept = true;
+        filter_mode_shell_up_key_binding = "session";
+        workspaces = true;
+        daemon.enabled = true;
+      };
     };
 
     alacritty.enable = true;
@@ -42,13 +64,13 @@
       theme = "Dark Pastel";
       settings = {
         shell = "bash";
-        editor = "vim";
+        editor = "hx";
         background_opacity = "1";
         dynamic_background_opacity = "yes";
       };
       environment = {
-        "EDITOR" = "vim";
-        "VISUAL" = "vim";
+        "EDITOR" = "hx";
+        "VISUAL" = "hx";
       };
     };
 
@@ -57,47 +79,11 @@
       package = pkgs.vscode.fhs;
     };
 
-    helix = {
+    fzf = {
       enable = true;
-      settings = {
-        theme = "catppuccin_macchiato";
-        editor = {
-          cursor-shape = {
-            normal = "block";
-            insert = "bar";
-            select = "underline";
-          };
-          indent-guides = {
-            character = "|";
-            render = true;
-          };
-          bufferline = "always";
-          scrolloff = 5;
-          line-number = "relative";
-          rulers = [ 80 120 ];
-        };
-        keys = {
-          normal = {
-            space = {
-              "w" = ":write";
-              "q" = ":quit";
-            };
-            "V" = "extend_line_below";
-          };
-          select = {
-            "V" = "extend_line_below";
-          };
-        };
-      };
-      languages.language = [
-        {
-          name = "nix";
-          auto-format = true;
-          formatter.command = lib.getExe pkgs.nixfmt-rfc-style;
-        }
-      ];
+      enableZshIntegration = true;
     };
-  };
+  } // helixConfig.programs;
 
   xdg = {
     enable = true;
@@ -109,6 +95,17 @@
       enable = true;
       documents = "${config.home.homeDirectory}/Documents";
       download = "${config.home.homeDirectory}/Downloads";
+    };
+  };
+
+  systemd.user = {
+    enable = true;
+    services = {
+      atuin-daemon = {
+        Unit.Description = "Run the atuin daemon.";
+        Install.WantedBy = [ "default.target" ];
+        Service.ExecStart = "${pkgs.atuin}/bin/atuin daemon";
+      };
     };
   };
 }

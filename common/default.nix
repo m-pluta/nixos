@@ -1,12 +1,9 @@
-{
-  config,
-  pkgs,
-  inputs,
-  ...
+{ pkgs
+, ...
 }:
 
 {
-  system.stateVersion = "24.05";
+  system.stateVersion = "25.05";
 
   time.timeZone = "Europe/London";
   console.keyMap = "uk";
@@ -20,16 +17,39 @@
     };
   };
 
+  hardware = {
+    # enableAllFirmware = true;
+    # graphics = {
+    #   enable = true;
+    #   extraPackages = with pkgs; [ intel-media-driver intel-ocl ];
+    # };
+    bluetooth.enable = true;
+    bluetooth.powerOnBoot = true;
+  };
+
+  # zramSwap = {
+  #   enable = true;
+  #   algorithm = "lzo";
+  #   memoryPercent = 30;
+  # };
+
   security.rtkit.enable = true;
 
-  hardware.pulseaudio.enable = false;
-
   services = {
+    pulseaudio.enable = false;
+    earlyoom = {
+      enable = true;
+      enableNotifications = true;
+    };
+    cpupower-gui.enable = true;
+    systembus-notify.enable = true;
+    logrotate.enable = true;
     printing.enable = true;
-    # auto-cpufreq.enable = true;
     thermald.enable = true;
     libinput.enable = true;
     fstrim.enable = true;
+    dbus.enable = true;
+    fail2ban.enable = true;
     mullvad-vpn.enable = true;
 
     power-profiles-daemon.enable = false;
@@ -44,11 +64,15 @@
       };
     };
 
+    # desktopManager.plasma6.enable = true;
+    # displayManager = {
+    #   sddm.enable = true;
+    #   sddm.wayland.enable = true;
+    # };
     xserver = {
       enable = true;
       displayManager.gdm.enable = true;
       desktopManager.gnome.enable = true;
-
       xkb = {
         layout = "gb";
       };
@@ -61,39 +85,79 @@
         support32Bit = true;
       };
       pulse.enable = true;
-    }; 
+    };
   };
 
   programs = {
     firefox.enable = true;
+    steam.enable = true;
     gnupg.agent = {
       enable = true;
       enableSSHSupport = true;
     };
-
+    starship = {
+      enable = true;
+      # settings = {
+      #   add_newline = false;
+      #   #battery.display.threshold = 90;
+      #   directory.fish_style_pwd_dir_length = 3;
+      #   format = "$directory $character";
+      #   memory_usage.disabled = false;
+      #   pijul_channel.disabled = false;
+      #   right_format = "$all";
+      #   time.disabled = false;
+      #   typst.format = "(\\[[$symbol($version )]($style)\\])";
+      #   vlang.disabled = true;
+      #   direnv = {
+      #     disabled = false;
+      #     format = "(\\[[$symbol$loaded/$allowed]($style)\\])";
+      #   };
+      #   shell = {
+      #     disabled = false;
+      #     zsh_indicator = "";
+      #     format = "(\\[[$indicator]($style)\\])";
+      #   };
+      #   os = {
+      #     disabled = false;
+      #     symbols.NixOS = "";
+      #     format = "(\\[[$symbol]($style)\\])";
+      #   };
+      # };
+      # presets = [
+      #   "nerd-font-symbols"
+      #   #"no-empty-icons"
+      #   "bracketed-segments"
+      # ];
+    };
 
     nh = {
       enable = true;
+      # flake = "/home/mikey/nixos";
       clean = {
-        dates = [ "daily" ];
-        extraArgs = "--keep 5 --keep-since 3d";
+        enable = true;
+        extraArgs = "--keep-since 1M --keep 10 --nogcroots";
       };
     };
   };
 
   environment = {
+    variables = {
+      EDITOR = "hx";
+      VISUAL = "hx";
+    };
     systemPackages = with pkgs; [
       vim
       fd
       ripgrep
       git
-      zip
       unzip
       wget
       gparted
       tree
       btop
       htop
+      haruna
+      hardinfo2
     ];
   };
 
@@ -101,44 +165,33 @@
     hostName = "mikebook";
     hostId = "01afcada";
     firewall.enable = true;
+    nftables.enable = true;
     networkmanager.enable = true;
   };
 
-  nix = {
-    settings = {
-      trusted-users = [ "mikey" ];
-      experimental-features = [
-        "nix-command"
-        "flakes"
-      ];
-      auto-optimise-store = true;
-      sandbox = true;
-
-      substituters = [
-        "https://cache.nixos.org"
-        "https://nix-community.cachix.org"
-      ];
+  fonts = {
+    packages = with pkgs; [
+      iosevka
+      fira-code
+      fira-code-symbols
+      noto-fonts
+      noto-fonts-cjk-sans
+      noto-fonts-emoji
+    ] ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
+    fontconfig = {
+      enable = true;
+      antialias = true;
+      hinting = {
+        enable = true;
+        style = "full";
+        autohint = true;
+      };
+      subpixel = {
+        rgba = "rgb";
+        lcdfilter = "default";
+      };
     };
-
-    gc = {
-      automatic = true;
-      dates = "daily";
-      options = "--delete-older-than 3d";
-    };
-
-    optimise = {
-      automatic = true;
-      dates = [ "weekly" ];
-    };
-
-    package = pkgs.nixVersions.stable;
   };
-
-  nixpkgs.config.allowUnfree = true;
-
-  fonts.packages = with pkgs; [
-    (nerdfonts.override { fonts = [ "JetBrainsMono" ]; })
-  ];
 
   users = {
     users = {
